@@ -18,4 +18,8 @@
       <Folder Include="Middlewares\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\ScholaPlan.Infrastructure\ScholaPlan.Infrastructure.csproj" />
+    </ItemGroup>
+
 </Project>

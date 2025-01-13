@@ -8,7 +8,6 @@
 
     <ItemGroup>
       <Folder Include="Configuration\" />
-      <Folder Include="Data\" />
       <Folder Include="ExternalAPIs\" />
       <Folder Include="Services\" />
     </ItemGroup>
@@ -20,6 +19,10 @@
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ScholaPlan.Domain\ScholaPlan.Domain.csproj" />
     </ItemGroup>
 
 </Project>
