@@ -47,9 +47,19 @@ public class SubjectController : ControllerBase
     [HttpPost]
     public async Task<ActionResult> Create([FromBody] Subject subject)
     {
-        _context.Subjects.Add(subject);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetById), new { id = subject.Id }, subject);
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        try
+        {
+            _context.Subjects.Add(subject);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetById), new { id = subject.Id }, subject);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Ошибка сервера: {ex.Message}");
+        }
     }
 
     /// <summary>

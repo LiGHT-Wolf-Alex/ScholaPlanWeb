@@ -13,5 +13,5 @@ public class Teacher
 
     public School School { get; set; }
 
-    public List<LessonSchedule> Lessons { get; set; } = [];
+    public ICollection<LessonSchedule> Lessons { get; set; } = new List<LessonSchedule>();
 }

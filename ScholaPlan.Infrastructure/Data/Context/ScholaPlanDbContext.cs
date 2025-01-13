@@ -39,19 +39,15 @@ public class ScholaPlanDbContext(DbContextOptions<ScholaPlanDbContext> options) 
         base.OnModelCreating(modelBuilder);
 
         // TeacherName как Value Object
-        modelBuilder.Entity<Teacher>()
+        modelBuilder.Entity<School>()
+            .HasMany(s => s.MaxLessonsPerDayConfigs)
+            .WithOne(c => c.School)
+            .HasForeignKey(c => c.SchoolId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<School>()
             .OwnsOne(t => t.Name);
 
-        // JSON-конвертер для MaxLessonsPerDay
-        modelBuilder.Entity<School>()
-            .Property(s => s.MaxLessonsPerDay)
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, new JsonSerializerOptions()),
-                v => JsonSerializer.Deserialize<Dictionary<int, int>>(v, new JsonSerializerOptions()) ??
-                     new Dictionary<int, int>()
-            );
-
-        // Отключаем каскадное удаление для внешних ключей (NO ACTION вместо CASCADE)
         modelBuilder.Entity<LessonSchedule>()
             .HasOne(ls => ls.School)
             .WithMany(s => s.LessonSchedules)
@@ -62,18 +58,6 @@ public class ScholaPlanDbContext(DbContextOptions<ScholaPlanDbContext> options) 
             .HasOne(ls => ls.Teacher)
             .WithMany(t => t.Lessons)
             .HasForeignKey(ls => ls.TeacherId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<LessonSchedule>()
-            .HasOne(ls => ls.Subject)
-            .WithMany()
-            .HasForeignKey(ls => ls.SubjectId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<LessonSchedule>()
-            .HasOne(ls => ls.Room)
-            .WithMany(r => r.Lessons)
-            .HasForeignKey(ls => ls.RoomId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
