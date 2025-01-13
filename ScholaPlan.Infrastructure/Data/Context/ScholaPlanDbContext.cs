@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using ScholaPlan.Domain.Entities;
 
 namespace ScholaPlan.Infrastructure.Data.Context;
@@ -37,19 +38,42 @@ public class ScholaPlanDbContext(DbContextOptions<ScholaPlanDbContext> options) 
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<School>()
-            .HasMany(s => s.Teachers)
-            .WithOne(t => t.School)
-            .HasForeignKey(t => t.SchoolId);
+        // TeacherName как Value Object
+        modelBuilder.Entity<Teacher>()
+            .OwnsOne(t => t.Name);
 
+        // JSON-конвертер для MaxLessonsPerDay
         modelBuilder.Entity<School>()
-            .HasMany(s => s.Rooms)
-            .WithOne(r => r.School)
-            .HasForeignKey(r => r.SchoolId);
+            .Property(s => s.MaxLessonsPerDay)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, new JsonSerializerOptions()),
+                v => JsonSerializer.Deserialize<Dictionary<int, int>>(v, new JsonSerializerOptions()) ??
+                     new Dictionary<int, int>()
+            );
 
-        modelBuilder.Entity<School>()
-            .HasMany(s => s.LessonSchedules)
-            .WithOne(l => l.School)
-            .HasForeignKey(l => l.SchoolId);
+        // Отключаем каскадное удаление для внешних ключей (NO ACTION вместо CASCADE)
+        modelBuilder.Entity<LessonSchedule>()
+            .HasOne(ls => ls.School)
+            .WithMany(s => s.LessonSchedules)
+            .HasForeignKey(ls => ls.SchoolId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<LessonSchedule>()
+            .HasOne(ls => ls.Teacher)
+            .WithMany(t => t.Lessons)
+            .HasForeignKey(ls => ls.TeacherId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<LessonSchedule>()
+            .HasOne(ls => ls.Subject)
+            .WithMany()
+            .HasForeignKey(ls => ls.SubjectId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<LessonSchedule>()
+            .HasOne(ls => ls.Room)
+            .WithMany(r => r.Lessons)
+            .HasForeignKey(ls => ls.RoomId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
