@@ -10,4 +10,8 @@ public class Teacher
     public TeacherName Name { get; set; }
     public List<TeacherSpecialization> Specializations { get; set; } = [];
     public int SchoolId { get; set; }
+
+    public School School { get; set; }
+
+    public List<LessonSchedule> Lessons { get; set; } = [];
 }

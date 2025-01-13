@@ -15,7 +15,7 @@ public class LessonSchedule
     public int RoomId { get; set; }
     public Room Room { get; set; }
 
-    public int ClassGrade { get; set; } // Класс (например, 7, 8, 9)
-    public int LessonNumber { get; set; } // Номер урока в течение дня (1-7)
+    public int ClassGrade { get; set; }
+    public int LessonNumber { get; set; }
     public DayOfWeek DayOfWeek { get; set; }
 }

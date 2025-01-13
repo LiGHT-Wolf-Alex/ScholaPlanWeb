@@ -10,4 +10,6 @@ public class Room
 
     public int SchoolId { get; set; }
     public School School { get; set; }
+
+    public List<LessonSchedule> Lessons { get; set; } = new();
 }
