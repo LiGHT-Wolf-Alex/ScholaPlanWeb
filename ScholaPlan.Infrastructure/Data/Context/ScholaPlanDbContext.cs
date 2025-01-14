@@ -5,7 +5,7 @@ using ScholaPlan.Domain.Entities;
 namespace ScholaPlan.Infrastructure.Data.Context;
 
 /// <summary>
-/// Контекст базы данных для проекта ScholaPlan.
+/// Основной DbContext для приложения ScholaPlan.
 /// </summary>
 public class ScholaPlanDbContext : DbContext
 {
@@ -14,20 +14,44 @@ public class ScholaPlanDbContext : DbContext
     {
     }
 
-    public DbSet<MaxLessonsPerDayConfig> MaxLessonsPerDayConfigs { get; set; }
     public DbSet<School> Schools { get; set; }
-    public DbSet<Teacher> Teachers { get; set; }
     public DbSet<Room> Rooms { get; set; }
-    public DbSet<LessonSchedule> LessonSchedules { get; set; }
+    public DbSet<Teacher> Teachers { get; set; }
     public DbSet<Subject> Subjects { get; set; }
+    public DbSet<LessonSchedule> LessonSchedules { get; set; }
+    public DbSet<MaxLessonsPerDayConfig> MaxLessonsPerDayConfigs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<School>().HasKey(s => s.Id);
-        modelBuilder.Entity<Teacher>().HasKey(t => t.Id);
-        modelBuilder.Entity<Room>().HasKey(r => r.Id);
-        modelBuilder.Entity<LessonSchedule>().HasKey(ls => ls.Id);
-        modelBuilder.Entity<Subject>().HasKey(sub => sub.Id);
-        modelBuilder.Entity<Teacher>().OwnsOne(t => t.Name);
+        // Отключаем каскадное удаление для связи LessonSchedule -> School,
+        // чтобы избежать multiple cascade paths.
+        modelBuilder.Entity<LessonSchedule>()
+            .HasOne(ls => ls.School)
+            .WithMany(s => s.LessonSchedules)
+            .HasForeignKey(ls => ls.SchoolId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // По желанию можно отключить каскад и для остальных внешних ключей,
+        // если хотите управлять удалениями вручную:
+        //
+        modelBuilder.Entity<LessonSchedule>()
+            .HasOne(ls => ls.Room)
+            .WithMany(r => r.Lessons)
+            .HasForeignKey(ls => ls.RoomId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<LessonSchedule>()
+            .HasOne(ls => ls.Teacher)
+            .WithMany(t => t.Lessons)
+            .HasForeignKey(ls => ls.TeacherId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<LessonSchedule>()
+            .HasOne(ls => ls.Subject)
+            .WithMany()
+            .HasForeignKey(ls => ls.SubjectId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        base.OnModelCreating(modelBuilder);
     }
 }

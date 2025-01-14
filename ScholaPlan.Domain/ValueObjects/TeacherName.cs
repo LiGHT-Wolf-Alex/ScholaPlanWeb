@@ -1,7 +1,9 @@
 ﻿using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
 
 namespace ScholaPlan.Domain.ValueObjects;
 
+[Owned]
 public class TeacherName
 {
     public string FirstName { get; private set; }

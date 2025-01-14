@@ -8,6 +8,7 @@
 
     <ItemGroup>
       <Folder Include="Configuration\" />
+      <Folder Include="Data\Migrations\" />
       <Folder Include="ExternalAPIs\" />
       <Folder Include="Services\" />
     </ItemGroup>
