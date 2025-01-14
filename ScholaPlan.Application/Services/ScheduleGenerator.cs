@@ -1,4 +1,5 @@
-﻿using ScholaPlan.Application.Interfaces;
+﻿using Microsoft.Extensions.Logging;
+using ScholaPlan.Application.Interfaces;
 using ScholaPlan.Domain.Entities;
 using ScholaPlan.Domain.Enums;
 
@@ -14,6 +15,13 @@ namespace ScholaPlan.Application.Services
             DayOfWeek.Thursday,
             DayOfWeek.Friday
         };
+
+        private readonly ILogger<ScheduleGenerator> _logger;
+
+        public ScheduleGenerator(ILogger<ScheduleGenerator> logger)
+        {
+            _logger = logger;
+        }
 
         public IEnumerable<LessonSchedule> GenerateSchedule(School school)
         {
@@ -49,16 +57,24 @@ namespace ScholaPlan.Application.Services
                             .Where(t => t.Specializations.Contains(subject.Specialization))
                             .ToList();
                         if (!availableTeachers.Any())
+                        {
+                            _logger.LogWarning(
+                                $"Нет доступных учителей для предмета {subject.Name} в классе {classGrade}.");
                             throw new InvalidOperationException(
                                 $"Нет доступных учителей для предмета {subject.Name}");
+                        }
 
                         // Ищем доступные комнаты (допустим, под этот предмет подходит Standard)
                         var availableRooms = school.Rooms
                             .Where(r => r.Type == RoomType.Standard)
                             .ToList();
                         if (!availableRooms.Any())
+                        {
+                            _logger.LogWarning(
+                                $"Нет доступных кабинетов для предмета {subject.Name} в классе {classGrade}.");
                             throw new InvalidOperationException(
                                 $"Нет доступных кабинетов для предмета {subject.Name}");
+                        }
 
                         bool scheduled = false;
 
@@ -129,6 +145,8 @@ namespace ScholaPlan.Application.Services
 
                         if (!scheduled)
                         {
+                            _logger.LogWarning(
+                                $"Не удалось назначить урок (Class={classGrade}, Subject={subject.Name}). Недостаточно ресурсов или превышен лимит уроков.");
                             throw new InvalidOperationException(
                                 $"Не удалось назначить урок (Class={classGrade}, Subject={subject.Name}). " +
                                 "Недостаточно ресурсов или превышен лимит уроков.");
@@ -137,6 +155,7 @@ namespace ScholaPlan.Application.Services
                 }
             }
 
+            _logger.LogInformation($"Генерация расписания завершена. Всего занятий: {generatedSchedules.Count}.");
             return generatedSchedules;
         }
     }

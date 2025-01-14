@@ -1,33 +1,24 @@
-﻿namespace ScholaPlan.API.DTOs;
+﻿using System.ComponentModel.DataAnnotations;
 
-/// <summary>
-/// Запрос для генерации расписания.
-/// </summary>
-public class GenerateScheduleRequest
+namespace ScholaPlan.API.DTOs
 {
     /// <summary>
-    /// Идентификатор школы для генерации расписания.
+    /// Запрос для генерации расписания.
     /// </summary>
-    public int SchoolId { get; set; }
+    public class GenerateScheduleRequest
+    {
+        /// <summary>
+        /// Идентификатор школы для генерации расписания.
+        /// </summary>
+        [Required]
+        public int SchoolId { get; set; }
 
-    /// <summary>
-    /// Учебный год для генерации расписания.
-    /// </summary>
-    public string AcademicYear { get; set; }
-}
-
-/// <summary>
-/// Ответ с результатом генерации расписания.
-/// </summary>
-public class GenerateScheduleResponse
-{
-    /// <summary>
-    /// Успешно ли сгенерировано расписание.
-    /// </summary>
-    public bool Success { get; set; }
-
-    /// <summary>
-    /// Сообщение об ошибке или результате генерации.
-    /// </summary>
-    public string Message { get; set; }
+        /// <summary>
+        /// Учебный год для генерации расписания.
+        /// </summary>
+        [Required]
+        [StringLength(9, MinimumLength = 4, ErrorMessage = "Учебный год должен быть в формате YYYY-YYYY.")]
+        [RegularExpression(@"^\d{4}-\d{4}$", ErrorMessage = "Учебный год должен быть в формате YYYY-YYYY.")]
+        public string AcademicYear { get; set; }
+    }
 }

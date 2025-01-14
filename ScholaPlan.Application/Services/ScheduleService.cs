@@ -1,28 +1,46 @@
-﻿using ScholaPlan.Application.Interfaces;
+﻿using Microsoft.Extensions.Logging;
+using ScholaPlan.Application.Interfaces;
 using ScholaPlan.Application.Interfaces.IRepositories;
 using ScholaPlan.Domain.Entities;
 
-namespace ScholaPlan.Application.Services;
-
-/// <summary>
-/// Сервис для генерации и управления расписанием.
-/// </summary>
-public class ScheduleService : IScheduleService
+namespace ScholaPlan.Application.Services
 {
-    private readonly IScheduleGenerator _scheduleGenerator;
-
-    public ScheduleService(IScheduleGenerator scheduleGenerator)
+    /// <summary>
+    /// Сервис для генерации и управления расписанием.
+    /// </summary>
+    public class ScheduleService : IScheduleService
     {
-        _scheduleGenerator = scheduleGenerator;
-    }
+        private readonly IScheduleGenerator _scheduleGenerator;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<ScheduleService> _logger;
 
-    public List<LessonSchedule> GenerateSchedule(School school)
-    {
-        if (!school.Subjects.Any() || !school.Teachers.Any())
+        public ScheduleService(IScheduleGenerator scheduleGenerator, IUnitOfWork unitOfWork,
+            ILogger<ScheduleService> logger)
         {
-            throw new InvalidOperationException("Недостаточно данных для генерации расписания");
+            _scheduleGenerator = scheduleGenerator;
+            _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
-        return _scheduleGenerator.GenerateSchedule(school).ToList();
+        public List<LessonSchedule> GenerateSchedule(School school)
+        {
+            if (!school.Subjects.Any() || !school.Teachers.Any())
+            {
+                _logger.LogWarning("Недостаточно данных для генерации расписания.");
+                throw new InvalidOperationException("Недостаточно данных для генерации расписания");
+            }
+
+            try
+            {
+                var schedules = _scheduleGenerator.GenerateSchedule(school).ToList();
+                _logger.LogInformation($"Сгенерировано {schedules.Count} занятий для школы ID {school.Id}.");
+                return schedules;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при генерации расписания.");
+                throw;
+            }
+        }
     }
 }

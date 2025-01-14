@@ -1,11 +1,17 @@
-﻿namespace ScholaPlan.Application.Interfaces.IRepositories;
+﻿using ScholaPlan.Domain.Entities;
 
-/// <summary>
-/// Интерфейс Unit of Work для управления транзакциями.
-/// </summary>
-public interface IUnitOfWork
+namespace ScholaPlan.Application.Interfaces.IRepositories
 {
-    ISchoolRepository Schools { get; }
-    ILessonScheduleRepository LessonSchedules { get; }
-    Task<int> SaveChangesAsync();
+    /// <summary>
+    /// Интерфейс Unit of Work для управления транзакциями.
+    /// </summary>
+    public interface IUnitOfWork
+    {
+        ISchoolRepository Schools { get; }
+        IRoomRepository Rooms { get; }
+        ISubjectRepository Subjects { get; }
+        ITeacherRepository Teachers { get; }
+        ILessonScheduleRepository LessonSchedules { get; }
+        Task<int> SaveChangesAsync();
+    }
 }

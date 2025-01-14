@@ -1,12 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using ScholaPlan.Application.Interfaces;
 using ScholaPlan.Application.Interfaces.IRepositories;
+using ScholaPlan.Application.Services;
 using ScholaPlan.Infrastructure.Data;
 using ScholaPlan.Infrastructure.Data.Context;
-using ScholaPlan.Infrastructure.Data.Repositories;
 using ScholaPlan.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Настройка логгирования
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 // Подключаем DbContext 
 builder.Services.AddDbContext<ScholaPlanDbContext>(options =>
@@ -19,13 +24,18 @@ builder.Services.Scan(scan => scan
     .AsImplementedInterfaces()
     .WithScopedLifetime());
 
-// Пример ручной регистрации (на случай, если нужен мануальный вариант, можно раскомментировать)
+//Ручная регистрация
 // builder.Services.AddScoped<ISchoolRepository, SchoolRepository>();
-// builder.Services.AddScoped<ILessonScheduleRepository, LessonScheduleRepository>();
+//builder.Services.AddScoped<IRoomRepository, RoomRepository>();
+//builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
+//builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
+//builder.Services.AddScoped<ILessonScheduleRepository, LessonScheduleRepository>();
 
 // UnitOfWork
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+builder.Services.AddScoped<IScheduleGenerator, ScheduleGenerator>(); // Сервис генерации расписания 
+builder.Services.AddScoped<IScheduleService, ScheduleService>(); // Сервис управления расписанием
 // Подключаем контроллеры
 builder.Services.AddControllers();
 
@@ -48,6 +58,23 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ScholaPlanDbContext>();
     DbInitializer.Initialize(context);
+}
+
+// Глобальная обработка исключений
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/error");
+    app.UseHsts();
+}
+else
+{
+    app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ScholaPlan API v1");
+        c.RoutePrefix = string.Empty;
+    });
 }
 
 // Запускаем Swagger (для dev/prod сред)
