@@ -1,44 +1,42 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using ScholaPlan.API.DTOs;
+using ScholaPlan.Application.Interfaces;
 using ScholaPlan.Domain.Entities;
-using ScholaPlan.Infrastructure.Data.Context;
+using ScholaPlan.Application.Interfaces.IRepositories;
 
-namespace ScholaPlan.API.Controllers;
-
-/// <summary>
-/// Контроллер для управления расписанием занятий.
-/// </summary>
-[ApiController]
-[Route("api/[controller]")]
-public class ScheduleController : ControllerBase
+namespace ScholaPlan.API.Controllers
 {
-    private readonly ScholaPlanDbContext _context;
-
-    public ScheduleController(ScholaPlanDbContext context)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ScheduleController : ControllerBase
     {
-        _context = context;
-    }
+        private readonly IScheduleService _scheduleService;
+        private readonly ISchoolRepository _schoolRepository;
 
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<LessonSchedule>>> GetAll()
-    {
-        var schedules = await _context.LessonSchedules
-            .Include(ls => ls.Teacher)
-            .Include(ls => ls.Subject)
-            .Include(ls => ls.Room)
-            .AsNoTracking()
-            .ToListAsync();
-        return Ok(schedules);
-    }
+        public ScheduleController(IScheduleService scheduleService, ISchoolRepository schoolRepository)
+        {
+            _scheduleService = scheduleService;
+            _schoolRepository = schoolRepository;
+        }
 
-    [HttpPost]
-    public async Task<ActionResult> Create([FromBody] LessonSchedule schedule)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        [HttpPost("generate")]
+        public async Task<IActionResult> GenerateSchedule([FromBody] GenerateScheduleRequest request)
+        {
+            var school = await _schoolRepository.GetByIdAsync(request.SchoolId);
+            if (school == null)
+            {
+                return NotFound("Ошибка сервера: Школа не найдена");
+            }
 
-        _context.LessonSchedules.Add(schedule);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetAll), new { id = schedule.Id }, schedule);
+            try
+            {
+                var schedule = _scheduleService.GenerateSchedule(school);
+                return Ok("Расписание успешно сгенерировано.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Ошибка сервера: {ex.Message}");
+            }
+        }
     }
 }

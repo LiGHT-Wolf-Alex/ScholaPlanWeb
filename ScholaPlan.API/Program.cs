@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using ScholaPlan.Application.Interfaces.IRepositories;
+using ScholaPlan.Infrastructure.Data;
 using ScholaPlan.Infrastructure.Data.Context;
 using ScholaPlan.Infrastructure.Data.Repositories;
 
@@ -11,12 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<ScholaPlanDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Автоматическая регистрация репозиториев с явным указанием сборки
 builder.Services.Scan(scan => scan
-    .FromAssemblies(Assembly.Load("ScholaPlan.Infrastructure"))
+    .FromAssemblies(typeof(ScholaPlan.Infrastructure.Repositories.SchoolRepository).Assembly)
     .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Repository")))
     .AsImplementedInterfaces()
     .WithScopedLifetime());
+
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -35,6 +36,11 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 app.MapControllers();
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ScholaPlanDbContext>();
+    DbInitializer.Initialize(context);
+}
 
 if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {

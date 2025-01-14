@@ -9,6 +9,7 @@
     <ItemGroup>
       <Folder Include="DTOs\" />
       <Folder Include="Mappings\" />
+      <Folder Include="Repositories\" />
       <Folder Include="UseCases\" />
     </ItemGroup>
 

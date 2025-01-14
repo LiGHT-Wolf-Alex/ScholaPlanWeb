@@ -8,7 +8,7 @@ public class Teacher
 {
     public int Id { get; set; }
     public TeacherName Name { get; set; }
-    public List<TeacherSpecialization> Specializations { get; set; } = [];
+    public List<TeacherSpecialization> Specializations { get; set; } = new List<TeacherSpecialization>();
     public int SchoolId { get; set; }
 
     public School School { get; set; }

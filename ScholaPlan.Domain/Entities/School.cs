@@ -8,8 +8,10 @@ namespace ScholaPlan.Domain.Entities;
 /// </summary>
 public class School
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
     public string Name { get; set; }
+    public string? Address { get; set; } // Добавил nullable
+
 
     /// <summary>
     /// Список ограничений по количеству уроков для каждого класса

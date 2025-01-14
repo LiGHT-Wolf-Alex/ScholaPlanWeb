@@ -1,36 +1,107 @@
 ﻿using ScholaPlan.Application.Interfaces;
 using ScholaPlan.Domain.Entities;
+using ScholaPlan.Application.Interfaces;
+using ScholaPlan.Domain.Entities;
 using ScholaPlan.Domain.Enums;
 
-/// <summary>
-/// Генерация расписания для указанной школы.
-/// </summary>
-/// <param name="school">Школа, для которой генерируется расписание.</param>
-/// <returns>Сгенерированное расписание для школы.</returns>
-public class ScheduleGenerator : IScheduleGenerator
+namespace ScholaPlan.Application.Services
 {
-    public IEnumerable<LessonSchedule> GenerateSchedule(School school)
+    public class ScheduleGenerator : IScheduleGenerator
     {
-        var generatedSchedules = new List<LessonSchedule>();
-
-        foreach (var subject in school.Subjects)
+        private readonly IEnumerable<DayOfWeek> _daysOfWeek = new[]
         {
-            for (int i = 0; i < subject.WeeklyHours; i++)
+            DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
+            DayOfWeek.Thursday, DayOfWeek.Friday
+        };
+
+        public IEnumerable<LessonSchedule> GenerateSchedule(School school)
+        {
+            var generatedSchedules = new List<LessonSchedule>();
+            var teacherAvailability = new Dictionary<Teacher, HashSet<(DayOfWeek, int)>>();
+            var roomAvailability = new Dictionary<Room, HashSet<(DayOfWeek, int)>>();
+
+            foreach (var teacher in school.Teachers)
             {
-                var availableTeachers = school.Teachers
-                    .Where(t => t.Specializations.Any(s => s == subject.Specialization));
-
-                if (!availableTeachers.Any())
-                    throw new InvalidOperationException($"Нет доступных учителей для предмета {subject.Name}");
-
-                var availableRooms = school.Rooms
-                    .Where(r => r.Type == RoomType.Standard);
-
-                if (!availableRooms.Any())
-                    throw new InvalidOperationException($"Нет доступных кабинетов для предмета {subject.Name}");
+                teacherAvailability[teacher] = new HashSet<(DayOfWeek, int)>();
             }
-        }
 
-        return generatedSchedules;
+            foreach (var room in school.Rooms)
+            {
+                roomAvailability[room] = new HashSet<(DayOfWeek, int)>();
+            }
+
+            foreach (var subject in school.Subjects)
+            {
+                for (int i = 0; i < subject.WeeklyHours; i++)
+                {
+                    var availableTeachers = school.Teachers
+                        .Where(t => t.Specializations.Contains(subject.Specialization))
+                        .ToList();
+
+                    if (!availableTeachers.Any())
+                        throw new InvalidOperationException($"Нет доступных учителей для предмета {subject.Name}");
+
+                    var availableRooms = school.Rooms
+                        .Where(r => r.Type == RoomType.Standard)
+                        .ToList();
+
+                    if (!availableRooms.Any())
+                        throw new InvalidOperationException($"Нет доступных кабинетов для предмета {subject.Name}");
+
+                    bool scheduled = false;
+
+                    foreach (var day in _daysOfWeek)
+                    {
+                        for (int lessonNumber = 1; lessonNumber <= 8; lessonNumber++) // Предположим 8 уроков в день
+                        {
+                            // Найти свободного учителя
+                            var teacher = availableTeachers.FirstOrDefault(t =>
+                                !teacherAvailability[t].Contains((day, lessonNumber)));
+
+                            if (teacher == null)
+                                continue;
+
+                            // Найти свободный кабинет
+                            var room = availableRooms.FirstOrDefault(r =>
+                                !roomAvailability[r].Contains((day, lessonNumber)));
+
+                            if (room == null)
+                                continue;
+
+                            // Назначить урок
+                            var lessonSchedule = new LessonSchedule
+                            {
+                                Teacher = teacher,
+                                Subject = subject,
+                                Room = room,
+                                School = school,
+                                DayOfWeek = day,
+                                LessonNumber = lessonNumber
+                            };
+
+                            generatedSchedules.Add(lessonSchedule);
+
+                            // Обновить доступность
+                            teacherAvailability[teacher].Add((day, lessonNumber));
+                            roomAvailability[room].Add((day, lessonNumber));
+
+                            scheduled = true;
+                            break; // Переходим к следующему уроку
+                        }
+
+                        if (scheduled)
+                            break;
+                    }
+
+                    if (!scheduled)
+                    {
+                        throw new InvalidOperationException(
+                            $"Не удалось назначить урок для предмета {subject.Name}. Недостаточно ресурсов.");
+                    }
+                }
+            }
+
+            return generatedSchedules;
+        }
     }
 }
