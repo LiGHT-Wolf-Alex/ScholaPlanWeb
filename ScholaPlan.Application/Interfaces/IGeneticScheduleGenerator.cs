@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 namespace ScholaPlan.Application.Interfaces
 {
     /// <summary>
-    /// Сервис для генерации и управления расписанием.
+    /// Интерфейс генератора расписания на основе генетических алгоритмов.
     /// </summary>
-    public interface IScheduleService
+    public interface IGeneticScheduleGenerator
     {
         /// <summary>
         /// Генерирует расписание для указанной школы с учетом предпочтений учителей.
@@ -15,7 +15,7 @@ namespace ScholaPlan.Application.Interfaces
         /// <param name="school">Школа для генерации расписания.</param>
         /// <param name="teacherPreferences">Предпочтения учителей.</param>
         /// <returns>Список расписаний занятий.</returns>
-        Task<List<LessonSchedule>> GenerateScheduleAsync(School school,
+        Task<IEnumerable<LessonSchedule>> GenerateScheduleAsync(School school,
             Dictionary<int, TeacherPreferences> teacherPreferences);
     }
 }

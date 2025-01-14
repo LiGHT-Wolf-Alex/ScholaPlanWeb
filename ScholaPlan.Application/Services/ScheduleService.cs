@@ -1,13 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using ScholaPlan.Application.Interfaces;
+﻿using ScholaPlan.Application.Interfaces;
 using ScholaPlan.Application.Interfaces.IRepositories;
 using ScholaPlan.Domain.Entities;
+using Microsoft.Extensions.Logging;
+
 
 namespace ScholaPlan.Application.Services
 {
-    /// <summary>
-    /// Сервис для генерации и управления расписанием.
-    /// </summary>
     public class ScheduleService : IScheduleService
     {
         private readonly IScheduleGenerator _scheduleGenerator;
@@ -22,7 +20,8 @@ namespace ScholaPlan.Application.Services
             _logger = logger;
         }
 
-        public List<LessonSchedule> GenerateSchedule(School school)
+        public async Task<List<LessonSchedule>> GenerateScheduleAsync(School school,
+            Dictionary<int, TeacherPreferences> teacherPreferences)
         {
             if (!school.Subjects.Any() || !school.Teachers.Any())
             {
@@ -32,7 +31,7 @@ namespace ScholaPlan.Application.Services
 
             try
             {
-                var schedules = _scheduleGenerator.GenerateSchedule(school).ToList();
+                var schedules = (await _scheduleGenerator.GenerateScheduleAsync(school, teacherPreferences)).ToList();
                 _logger.LogInformation($"Сгенерировано {schedules.Count} занятий для школы ID {school.Id}.");
                 return schedules;
             }

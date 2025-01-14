@@ -1,17 +1,84 @@
-﻿using ScholaPlan.Domain.Entities;
+﻿using Microsoft.AspNetCore.Identity;
+using ScholaPlan.Domain.Entities;
+using ScholaPlan.Infrastructure.Data.Context;
+using Microsoft.Extensions.DependencyInjection;
 using ScholaPlan.Domain.Enums;
 using ScholaPlan.Domain.ValueObjects;
-using ScholaPlan.Infrastructure.Data.Context;
 
 namespace ScholaPlan.Infrastructure.Data
 {
-    /// <summary>
-    /// Класс для начального заполнения базы данных тестовыми данными
-    /// </summary>
     public static class DbInitializer
     {
-        public static void Initialize(ScholaPlanDbContext context)
+        public static void Initialize(ScholaPlanDbContext context, IServiceProvider serviceProvider)
         {
+            // Применение миграций и создание базы данных
+            context.Database.EnsureCreated();
+
+            // Создание ролей
+            if (!context.Roles.Any())
+            {
+                var roleManager = serviceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+                string[] roles = { "Admin", "Teacher", "User" };
+
+                foreach (var role in roles)
+                {
+                    if (!roleManager.RoleExistsAsync(role).Result)
+                    {
+                        var newRole = new ApplicationRole { Name = role, NormalizedName = role.ToUpper() };
+                        roleManager.CreateAsync(newRole).Wait();
+                    }
+                }
+            }
+
+            // Создание пользователей
+            if (!context.Users.Any())
+            {
+                var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+                // Создание администратора
+                var adminUser = new ApplicationUser
+                {
+                    UserName = "admin",
+                    Email = "admin@scholaplan.com",
+                    EmailConfirmed = true
+                };
+
+                var result = userManager.CreateAsync(adminUser, "Admin@123").Result;
+                if (result.Succeeded)
+                {
+                    userManager.AddToRoleAsync(adminUser, "Admin").Wait();
+                }
+
+                // Создание учителя
+                var teacherUser = new ApplicationUser
+                {
+                    UserName = "teacher1",
+                    Email = "teacher1@scholaplan.com",
+                    EmailConfirmed = true
+                };
+
+                var teacherResult = userManager.CreateAsync(teacherUser, "Teacher@123").Result;
+                if (teacherResult.Succeeded)
+                {
+                    userManager.AddToRoleAsync(teacherUser, "Teacher").Wait();
+                }
+
+                // Создание обычного пользователя
+                var normalUser = new ApplicationUser
+                {
+                    UserName = "user1",
+                    Email = "user1@scholaplan.com",
+                    EmailConfirmed = true
+                };
+
+                var userResult = userManager.CreateAsync(normalUser, "User@123").Result;
+                if (userResult.Succeeded)
+                {
+                    userManager.AddToRoleAsync(normalUser, "User").Wait();
+                }
+            }
+
+            // Добавление остальных данных
             if (context.Schools.Any()) return;
 
             var school = new School
@@ -20,7 +87,7 @@ namespace ScholaPlan.Infrastructure.Data
                 Address = "123 Main Street"
             };
 
-            // Добавление данных отдельно с явным указанием связи
+            // Добавление данных с явным указанием связей
             var maxLessonsPerDayConfigs = new List<MaxLessonsPerDayConfig>
             {
                 new MaxLessonsPerDayConfig { School = school, ClassGrade = 7, MaxLessons = 6 },
@@ -69,6 +136,28 @@ namespace ScholaPlan.Infrastructure.Data
             school.Teachers = teachers;
 
             context.Schools.Add(school);
+            context.SaveChanges();
+
+            // Добавление предпочтений учителей
+            var teacherPreferences = new List<TeacherPreferences>
+            {
+                new TeacherPreferences
+                {
+                    TeacherId = teachers[0].Id, // Предполагается, что ID установлен после сохранения
+                    AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday },
+                    AvailableLessonNumbers = new List<int> { 1, 2, 3, 4 },
+                    PreferredRoomIds = new List<int> { rooms[0].Id } // Предпочтительный кабинет 101
+                },
+                new TeacherPreferences
+                {
+                    TeacherId = teachers[1].Id, // Предполагается, что ID установлен после сохранения
+                    AvailableDays = new List<DayOfWeek> { DayOfWeek.Tuesday, DayOfWeek.Thursday },
+                    AvailableLessonNumbers = new List<int> { 5, 6, 7, 8 },
+                    PreferredRoomIds = new List<int> { rooms[1].Id } // Предпочтительный кабинет 102
+                }
+            };
+
+            context.TeacherPreferences.AddRange(teacherPreferences);
             context.SaveChanges();
         }
     }

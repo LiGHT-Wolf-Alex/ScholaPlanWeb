@@ -14,6 +14,7 @@ namespace ScholaPlan.API.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
         [Route("error")]
         public IActionResult HandleError()
         {
@@ -22,7 +23,7 @@ namespace ScholaPlan.API.Controllers
 
             _logger.LogError(exception, "Необработанное исключение.");
 
-            return StatusCode(500, ApiResponse<string>.FailureResponse("Внутренняя ошибка сервера."));
+            return StatusCode(500, new ApiResponse<string>(false, "Внутренняя ошибка сервера."));
         }
     }
 }

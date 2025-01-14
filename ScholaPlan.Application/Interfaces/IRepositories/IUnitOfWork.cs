@@ -1,4 +1,5 @@
 ﻿using ScholaPlan.Domain.Entities;
+using System.Threading.Tasks;
 
 namespace ScholaPlan.Application.Interfaces.IRepositories
 {

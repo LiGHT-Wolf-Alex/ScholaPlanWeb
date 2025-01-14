@@ -1,13 +1,15 @@
 ﻿using ScholaPlan.Domain.Entities;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace ScholaPlan.Application.Interfaces;
-
-public interface IScheduleGenerator
+namespace ScholaPlan.Application.Interfaces
 {
     /// <summary>
-    /// Генерирует расписание для указанной школы.
+    /// Интерфейс генератора расписания.
     /// </summary>
-    /// <param name="school">Школа для генерации расписания.</param>
-    /// <returns>Список занятий в расписании.</returns>
-    IEnumerable<LessonSchedule> GenerateSchedule(School school);
+    public interface IScheduleGenerator
+    {
+        Task<IEnumerable<LessonSchedule>> GenerateScheduleAsync(School school,
+            Dictionary<int, TeacherPreferences> teacherPreferences);
+    }
 }

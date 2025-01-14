@@ -7,24 +7,35 @@ namespace ScholaPlan.Infrastructure.Repositories
     /// <summary>
     /// Реализация паттерна Unit of Work для управления транзакциями.
     /// </summary>
-    public class UnitOfWork(
-        ScholaPlanDbContext context,
-        ISchoolRepository schoolRepository,
-        IRoomRepository roomRepository,
-        ISubjectRepository subjectRepository,
-        ITeacherRepository teacherRepository,
-        ILessonScheduleRepository lessonScheduleRepository)
-        : IUnitOfWork
+    public class UnitOfWork : IUnitOfWork
     {
-        public ISchoolRepository Schools { get; } = schoolRepository;
-        public IRoomRepository Rooms { get; } = roomRepository;
-        public ISubjectRepository Subjects { get; } = subjectRepository;
-        public ITeacherRepository Teachers { get; } = teacherRepository;
-        public ILessonScheduleRepository LessonSchedules { get; } = lessonScheduleRepository;
+        private readonly ScholaPlanDbContext _context;
+
+        public ISchoolRepository Schools { get; }
+        public IRoomRepository Rooms { get; }
+        public ISubjectRepository Subjects { get; }
+        public ITeacherRepository Teachers { get; }
+        public ILessonScheduleRepository LessonSchedules { get; }
+
+        public UnitOfWork(
+            ScholaPlanDbContext context,
+            ISchoolRepository schoolRepository,
+            IRoomRepository roomRepository,
+            ISubjectRepository subjectRepository,
+            ITeacherRepository teacherRepository,
+            ILessonScheduleRepository lessonScheduleRepository)
+        {
+            _context = context;
+            Schools = schoolRepository;
+            Rooms = roomRepository;
+            Subjects = subjectRepository;
+            Teachers = teacherRepository;
+            LessonSchedules = lessonScheduleRepository;
+        }
 
         public async Task<int> SaveChangesAsync()
         {
-            return await context.SaveChangesAsync();
+            return await _context.SaveChangesAsync();
         }
     }
 }

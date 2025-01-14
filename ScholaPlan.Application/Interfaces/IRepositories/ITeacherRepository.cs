@@ -8,7 +8,7 @@ namespace ScholaPlan.Application.Interfaces.IRepositories
     public interface ITeacherRepository
     {
         Task<Teacher?> GetByIdAsync(int teacherId);
-
         Task AddAsync(Teacher teacher);
+        void Remove(Teacher teacher); // Добавлено
     }
 }

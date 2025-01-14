@@ -1,17 +1,18 @@
-﻿namespace ScholaPlan.API.DTOs;
-
-/// <summary>
-/// Ответ с результатом генерации расписания.
-/// </summary>
-public class GenerateScheduleResponse
+﻿namespace ScholaPlan.API.DTOs
 {
     /// <summary>
-    /// Успешно ли сгенерировано расписание.
+    /// Модель ответа на генерацию расписания.
     /// </summary>
-    public bool Success { get; set; }
+    public class GenerateScheduleResponse
+    {
+        /// <summary>
+        /// Успешность операции.
+        /// </summary>
+        public bool Success { get; set; }
 
-    /// <summary>
-    /// Сообщение об ошибке или результате генерации.
-    /// </summary>
-    public string Message { get; set; }
+        /// <summary>
+        /// Сообщение об операции.
+        /// </summary>
+        public string Message { get; set; }
+    }
 }

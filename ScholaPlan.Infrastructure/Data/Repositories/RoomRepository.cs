@@ -50,6 +50,18 @@ namespace ScholaPlan.Infrastructure.Repositories
             }
         }
 
-        // Дополнительные методы при необходимости
+        public void Remove(Room room)
+        {
+            try
+            {
+                _logger.LogInformation($"Удаление кабинета с ID {room.Id}.");
+                _context.Rooms.Remove(room);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Ошибка при удалении кабинета с ID {room.Id}.");
+                throw;
+            }
+        }
     }
 }

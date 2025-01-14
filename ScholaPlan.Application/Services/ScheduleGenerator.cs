@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using ScholaPlan.Application.Interfaces;
+﻿using ScholaPlan.Application.Interfaces;
 using ScholaPlan.Domain.Entities;
 using ScholaPlan.Domain.Enums;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace ScholaPlan.Application.Services
 {
@@ -23,13 +25,21 @@ namespace ScholaPlan.Application.Services
             _logger = logger;
         }
 
-        public IEnumerable<LessonSchedule> GenerateSchedule(School school)
+        public async Task<IEnumerable<LessonSchedule>> GenerateScheduleAsync(School school,
+            Dictionary<int, TeacherPreferences> teacherPreferences)
         {
-            var generatedSchedules = new List<LessonSchedule>();
+            return await Task.Run(() => GenerateSchedule(school, teacherPreferences));
+        }
 
-            // Доступность учителей и кабинетов: (DayOfWeek, lessonNumber) -> Teacher/Room
-            var teacherAvailability = new Dictionary<Teacher, HashSet<(DayOfWeek, int)>>();
-            var roomAvailability = new Dictionary<Room, HashSet<(DayOfWeek, int)>>();
+        // ... предыдущий код ...
+
+        private IEnumerable<LessonSchedule> GenerateSchedule(School school,
+            Dictionary<int, TeacherPreferences> teacherPreferences)
+        {
+            var generatedSchedules = new ConcurrentBag<LessonSchedule>();
+
+            var teacherAvailability = new ConcurrentDictionary<Teacher, HashSet<(DayOfWeek, int)>>();
+            var roomAvailability = new ConcurrentDictionary<Room, HashSet<(DayOfWeek, int)>>();
 
             foreach (var teacher in school.Teachers)
                 teacherAvailability[teacher] = new HashSet<(DayOfWeek, int)>();
@@ -37,110 +47,149 @@ namespace ScholaPlan.Application.Services
             foreach (var room in school.Rooms)
                 roomAvailability[room] = new HashSet<(DayOfWeek, int)>();
 
-            // Счётчик уроков для каждого класса и дня
-            // Ключ: (classGrade, DayOfWeek), Значение: уже запланированное количество уроков
-            var lessonsCountByClassDay = new Dictionary<(int, DayOfWeek), int>();
+            var lessonsCountByClassDay = new ConcurrentDictionary<(int, DayOfWeek), int>();
 
-            // Идём по каждому классу, для которого есть MaxLessonsPerDayConfig
-            foreach (var classConfig in school.MaxLessonsPerDayConfigs)
+            var orderedClassConfigs = school.MaxLessonsPerDayConfigs.OrderByDescending(c => c.MaxLessons).ToList();
+
+            foreach (var classConfig in orderedClassConfigs)
             {
                 int classGrade = classConfig.ClassGrade;
                 int maxLessonsPerDay = classConfig.MaxLessons;
 
-                // Планируем каждый предмет в этом классе
-                foreach (var subject in school.Subjects)
+                var orderedSubjects = school.Subjects.OrderByDescending(s => s.WeeklyHours).ToList();
+
+                foreach (var subject in orderedSubjects)
                 {
                     for (int i = 0; i < subject.WeeklyHours; i++)
                     {
-                        // Ищем подходящего учителя
                         var availableTeachers = school.Teachers
                             .Where(t => t.Specializations.Contains(subject.Specialization))
+                            .OrderBy(t => teacherAvailability[t].Count)
                             .ToList();
+
                         if (!availableTeachers.Any())
                         {
                             _logger.LogWarning(
                                 $"Нет доступных учителей для предмета {subject.Name} в классе {classGrade}.");
-                            throw new InvalidOperationException(
-                                $"Нет доступных учителей для предмета {subject.Name}");
+                            throw new InvalidOperationException($"Нет доступных учителей для предмета {subject.Name}");
                         }
 
-                        // Ищем доступные комнаты (допустим, под этот предмет подходит Standard)
                         var availableRooms = school.Rooms
                             .Where(r => r.Type == RoomType.Standard)
+                            .OrderBy(r => roomAvailability[r].Count)
                             .ToList();
+
                         if (!availableRooms.Any())
                         {
                             _logger.LogWarning(
                                 $"Нет доступных кабинетов для предмета {subject.Name} в классе {classGrade}.");
-                            throw new InvalidOperationException(
-                                $"Нет доступных кабинетов для предмета {subject.Name}");
+                            throw new InvalidOperationException($"Нет доступных кабинетов для предмета {subject.Name}");
                         }
 
                         bool scheduled = false;
 
-                        // Перебираем дни и номера уроков
                         foreach (var day in _daysOfWeek)
                         {
                             for (int lessonNumber = 1; lessonNumber <= 8; lessonNumber++)
                             {
-                                // Проверяем, не превышен ли лимит уроков в день для этого класса
                                 var key = (classGrade, day);
-                                lessonsCountByClassDay.TryGetValue(key, out int currentCount);
-                                if (currentCount >= maxLessonsPerDay)
-                                {
-                                    // Уже достигли лимита уроков для этого дня
+                                lessonsCountByClassDay.AddOrUpdate(key, 0, (k, v) => v);
+
+                                if (lessonsCountByClassDay[key] >= maxLessonsPerDay)
                                     continue;
+
+                                var suitableTeachers = availableTeachers.Where(t =>
+                                {
+                                    // Проверка доступности по предпочтениям
+                                    if (teacherPreferences.ContainsKey(t.Id))
+                                    {
+                                        var prefs = teacherPreferences[t.Id];
+                                        if (!prefs.AvailableDays.Contains(day) ||
+                                            !prefs.AvailableLessonNumbers.Contains(lessonNumber))
+                                            return false;
+                                    }
+
+                                    return !teacherAvailability[t].Contains((day, lessonNumber));
+                                }).ToList();
+
+                                if (!suitableTeachers.Any())
+                                    continue;
+
+                                // Попытка найти учителя, у которого уже есть занятия в этом кабинете в тот же день
+                                Teacher selectedTeacher = null;
+                                Room selectedRoom = null;
+
+                                foreach (var teacher in suitableTeachers)
+                                {
+                                    if (teacherPreferences.ContainsKey(teacher.Id))
+                                    {
+                                        var prefs = teacherPreferences[teacher.Id];
+                                        foreach (var preferredRoomId in prefs.PreferredRoomIds)
+                                        {
+                                            var room = school.Rooms.FirstOrDefault(r => r.Id == preferredRoomId);
+                                            if (room != null && !roomAvailability[room].Contains((day, lessonNumber)))
+                                            {
+                                                selectedTeacher = teacher;
+                                                selectedRoom = room;
+                                                break;
+                                            }
+                                        }
+
+                                        if (selectedTeacher != null)
+                                            break;
+                                    }
                                 }
 
-                                // Найти свободного учителя
-                                var teacher = availableTeachers.FirstOrDefault(t =>
-                                    !teacherAvailability[t].Contains((day, lessonNumber)));
-
-                                if (teacher == null)
-                                    continue;
-
-                                // Найти свободную комнату
-                                var room = availableRooms.FirstOrDefault(r =>
-                                    !roomAvailability[r].Contains((day, lessonNumber)));
-
-                                if (room == null)
-                                    continue;
-
-                                // Создаём LessonSchedule
-                                var lessonSchedule = new LessonSchedule
+                                // Если не удалось найти в предпочтительных кабинетах, выбрать любой доступный
+                                if (selectedTeacher == null)
                                 {
-                                    School = school,
-                                    SchoolId = school.Id,
+                                    selectedTeacher = suitableTeachers.First();
+                                    selectedRoom = availableRooms.FirstOrDefault(r =>
+                                        !roomAvailability[r].Contains((day, lessonNumber)));
+                                }
 
-                                    Teacher = teacher,
-                                    TeacherId = teacher.Id,
+                                if (selectedTeacher != null && selectedRoom != null)
+                                {
+                                    var lessonSchedule = new LessonSchedule
+                                    {
+                                        School = school,
+                                        SchoolId = school.Id,
 
-                                    Subject = subject,
-                                    SubjectId = subject.Id,
+                                        Teacher = selectedTeacher,
+                                        TeacherId = selectedTeacher.Id,
 
-                                    Room = room,
-                                    RoomId = room.Id,
+                                        Subject = subject,
+                                        SubjectId = subject.Id,
 
-                                    ClassGrade = classGrade, // Класс из classConfig
-                                    DayOfWeek = day,
-                                    LessonNumber = lessonNumber
-                                };
+                                        Room = selectedRoom,
+                                        RoomId = selectedRoom.Id,
 
-                                generatedSchedules.Add(lessonSchedule);
+                                        ClassGrade = classGrade,
+                                        DayOfWeek = day,
+                                        LessonNumber = lessonNumber
+                                    };
 
-                                // Обновляем занятость учителя/комнаты
-                                teacherAvailability[teacher].Add((day, lessonNumber));
-                                roomAvailability[room].Add((day, lessonNumber));
+                                    generatedSchedules.Add(lessonSchedule);
 
-                                // Увеличиваем счётчик уроков для этого (classGrade, day)
-                                lessonsCountByClassDay[key] = currentCount + 1;
+                                    lock (teacherAvailability[selectedTeacher])
+                                    {
+                                        teacherAvailability[selectedTeacher].Add((day, lessonNumber));
+                                    }
 
-                                scheduled = true;
-                                break; // Ушли на следующий час по этому предмету
+                                    lock (roomAvailability[selectedRoom])
+                                    {
+                                        roomAvailability[selectedRoom].Add((day, lessonNumber));
+                                    }
+
+                                    lessonsCountByClassDay.AddOrUpdate(key, 1, (k, v) => v + 1);
+
+                                    scheduled = true;
+                                    break;
+                                }
                             }
 
                             if (scheduled)
-                                break; // Переходим к следующему уроку subject.WeeklyHours
+                                break;
                         }
 
                         if (!scheduled)

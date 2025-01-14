@@ -11,5 +11,6 @@ namespace ScholaPlan.Application.Interfaces.IRepositories
         Task<IEnumerable<LessonSchedule>> GetBySchoolIdAsync(int schoolId);
         Task AddRangeAsync(IEnumerable<LessonSchedule> lessonSchedules);
         Task DeleteBySchoolIdAsync(int schoolId);
+        void Remove(LessonSchedule lessonSchedule); // Добавлено
     }
 }
