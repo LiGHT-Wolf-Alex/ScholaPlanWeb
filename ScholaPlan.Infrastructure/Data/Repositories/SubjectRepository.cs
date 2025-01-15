@@ -1,66 +1,57 @@
-﻿using ScholaPlan.Application.Interfaces.IRepositories;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using ScholaPlan.Application.Interfaces.IRepositories;
 using ScholaPlan.Domain.Entities;
 using ScholaPlan.Infrastructure.Data.Context;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
-namespace ScholaPlan.Infrastructure.Repositories
+namespace ScholaPlan.Infrastructure.Data.Repositories;
+
+/// <summary>
+/// Реализация репозитория для работы с предметами.
+/// </summary>
+public class SubjectRepository(ScholaPlanDbContext context, ILogger<SubjectRepository> logger)
+    : ISubjectRepository
 {
-    /// <summary>
-    /// Реализация репозитория для работы с предметами.
-    /// </summary>
-    public class SubjectRepository : ISubjectRepository
+    public async Task<Subject?> GetByIdAsync(int subjectId)
     {
-        private readonly ScholaPlanDbContext _context;
-        private readonly ILogger<SubjectRepository> _logger;
-
-        public SubjectRepository(ScholaPlanDbContext context, ILogger<SubjectRepository> logger)
+        try
         {
-            _context = context;
-            _logger = logger;
+            logger.LogInformation($"Получение предмета с ID {subjectId}.");
+            return await context.Subjects
+                .FirstOrDefaultAsync(s => s.Id == subjectId);
         }
-
-        public async Task<Subject?> GetByIdAsync(int subjectId)
+        catch (Exception ex)
         {
-            try
-            {
-                _logger.LogInformation($"Получение предмета с ID {subjectId}.");
-                return await _context.Subjects
-                    .FirstOrDefaultAsync(s => s.Id == subjectId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Ошибка при получении предмета с ID {subjectId}.");
-                throw;
-            }
+            logger.LogError(ex, $"Ошибка при получении предмета с ID {subjectId}.");
+            throw;
         }
+    }
 
-        public async Task AddAsync(Subject subject)
+    public async Task AddAsync(Subject subject)
+    {
+        try
         {
-            try
-            {
-                _logger.LogInformation($"Добавление нового предмета: {subject.Name}.");
-                await _context.Subjects.AddAsync(subject);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка при добавлении предмета.");
-                throw;
-            }
+            logger.LogInformation($"Добавление нового предмета: {subject.Name}.");
+            await context.Subjects.AddAsync(subject);
         }
-
-        public void Remove(Subject subject)
+        catch (Exception ex)
         {
-            try
-            {
-                _logger.LogInformation($"Удаление предмета с ID {subject.Id}.");
-                _context.Subjects.Remove(subject);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Ошибка при удалении предмета с ID {subject.Id}.");
-                throw;
-            }
+            logger.LogError(ex, "Ошибка при добавлении предмета.");
+            throw;
+        }
+    }
+
+    public void Remove(Subject subject)
+    {
+        try
+        {
+            logger.LogInformation($"Удаление предмета с ID {subject.Id}.");
+            context.Subjects.Remove(subject);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, $"Ошибка при удалении предмета с ID {subject.Id}.");
+            throw;
         }
     }
 }

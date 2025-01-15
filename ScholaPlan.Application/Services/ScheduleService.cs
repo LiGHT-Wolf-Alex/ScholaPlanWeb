@@ -4,42 +4,35 @@ using ScholaPlan.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
 
-namespace ScholaPlan.Application.Services
-{
-    public class ScheduleService : IScheduleService
-    {
-        private readonly IScheduleGenerator _scheduleGenerator;
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly ILogger<ScheduleService> _logger;
+namespace ScholaPlan.Application.Services;
 
-        public ScheduleService(IScheduleGenerator scheduleGenerator, IUnitOfWork unitOfWork,
-            ILogger<ScheduleService> logger)
+public class ScheduleService(
+    IScheduleGenerator scheduleGenerator,
+    IUnitOfWork unitOfWork,
+    ILogger<ScheduleService> logger)
+    : IScheduleService
+{
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+
+    public async Task<List<LessonSchedule>> GenerateScheduleAsync(School school,
+        Dictionary<int, TeacherPreferences> teacherPreferences)
+    {
+        if (!school.Subjects.Any() || !school.Teachers.Any())
         {
-            _scheduleGenerator = scheduleGenerator;
-            _unitOfWork = unitOfWork;
-            _logger = logger;
+            logger.LogWarning("Недостаточно данных для генерации расписания.");
+            throw new InvalidOperationException("Недостаточно данных для генерации расписания");
         }
 
-        public async Task<List<LessonSchedule>> GenerateScheduleAsync(School school,
-            Dictionary<int, TeacherPreferences> teacherPreferences)
+        try
         {
-            if (!school.Subjects.Any() || !school.Teachers.Any())
-            {
-                _logger.LogWarning("Недостаточно данных для генерации расписания.");
-                throw new InvalidOperationException("Недостаточно данных для генерации расписания");
-            }
-
-            try
-            {
-                var schedules = (await _scheduleGenerator.GenerateScheduleAsync(school, teacherPreferences)).ToList();
-                _logger.LogInformation($"Сгенерировано {schedules.Count} занятий для школы ID {school.Id}.");
-                return schedules;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка при генерации расписания.");
-                throw;
-            }
+            var schedules = (await scheduleGenerator.GenerateScheduleAsync(school, teacherPreferences)).ToList();
+            logger.LogInformation($"Сгенерировано {schedules.Count} занятий для школы ID {school.Id}.");
+            return schedules;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Ошибка при генерации расписания.");
+            throw;
         }
     }
 }

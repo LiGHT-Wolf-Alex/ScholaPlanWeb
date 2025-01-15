@@ -1,14 +1,13 @@
 ﻿using ScholaPlan.Domain.Entities;
 
-namespace ScholaPlan.Application.Interfaces.IRepositories
+namespace ScholaPlan.Application.Interfaces.IRepositories;
+
+/// <summary>
+/// Репозиторий для работы с учителями.
+/// </summary>
+public interface ITeacherRepository
 {
-    /// <summary>
-    /// Репозиторий для работы с учителями.
-    /// </summary>
-    public interface ITeacherRepository
-    {
-        Task<Teacher?> GetByIdAsync(int teacherId);
-        Task AddAsync(Teacher teacher);
-        void Remove(Teacher teacher); // Добавлено
-    }
+    Task<Teacher?> GetByIdAsync(int teacherId);
+    Task AddAsync(Teacher teacher);
+    void Remove(Teacher teacher); 
 }

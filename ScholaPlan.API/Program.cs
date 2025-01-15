@@ -7,15 +7,14 @@ using ScholaPlan.Application.Interfaces;
 using ScholaPlan.Application.Interfaces.IRepositories;
 using ScholaPlan.Application.Services;
 using ScholaPlan.Infrastructure.Data.Context;
-using ScholaPlan.Infrastructure.Repositories;
 using ScholaPlan.Domain.Entities;
 using System.Text;
-using AutoMapper;
 using ScholaPlan.API.MappingProfiles;
 using AspNetCoreRateLimit;
 using Serilog;
 using Prometheus;
 using ScholaPlan.Infrastructure.Data;
+using ScholaPlan.Infrastructure.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 

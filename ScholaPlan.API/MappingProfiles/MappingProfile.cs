@@ -1,19 +1,17 @@
 ﻿using AutoMapper;
 using ScholaPlan.API.DTOs;
 using ScholaPlan.Domain.Entities;
-using ScholaPlan.Domain.Enums;
 
-namespace ScholaPlan.API.MappingProfiles
+namespace ScholaPlan.API.MappingProfiles;
+
+public class MappingProfile : Profile
 {
-    public class MappingProfile : Profile
+    public MappingProfile()
     {
-        public MappingProfile()
-        {
-            CreateMap<TeacherPreferencesDto, TeacherPreferences>()
-                .ForMember(dest => dest.AvailableDays,
-                    opt => opt.MapFrom(src => src.AvailableDays.Select(d => (DayOfWeek)d).ToList()))
-                .ForMember(dest => dest.AvailableLessonNumbers, opt => opt.MapFrom(src => src.AvailableLessonNumbers))
-                .ForMember(dest => dest.PreferredRoomIds, opt => opt.MapFrom(src => src.PreferredRoomIds));
-        }
+        CreateMap<TeacherPreferencesDto, TeacherPreferences>()
+            .ForMember(dest => dest.AvailableDays,
+                opt => opt.MapFrom(src => src.AvailableDays.Select(d => (DayOfWeek)d).ToList()))
+            .ForMember(dest => dest.AvailableLessonNumbers, opt => opt.MapFrom(src => src.AvailableLessonNumbers))
+            .ForMember(dest => dest.PreferredRoomIds, opt => opt.MapFrom(src => src.PreferredRoomIds));
     }
 }

@@ -1,27 +1,24 @@
 ﻿using ScholaPlan.Domain.ValueObjects;
 using ScholaPlan.Domain.Enums;
-using System.Collections.Generic;
 
-namespace ScholaPlan.Domain.Entities
+namespace ScholaPlan.Domain.Entities;
+
+/// <summary>
+/// Учитель в школе.
+/// </summary>
+public class Teacher
 {
-    /// <summary>
-    /// Учитель в школе.
-    /// </summary>
-    public class Teacher
-    {
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        public TeacherName Name { get; set; }
+    public TeacherName Name { get; set; }
 
-        public ICollection<TeacherSpecialization> Specializations { get; set; } = new List<TeacherSpecialization>();
+    public ICollection<TeacherSpecialization> Specializations { get; set; } = new List<TeacherSpecialization>();
 
-        public int SchoolId { get; set; }
+    public int SchoolId { get; set; }
 
-        public School School { get; set; }
+    public School School { get; set; }
 
-        public ICollection<LessonSchedule> Lessons { get; set; } = new List<LessonSchedule>();
+    public ICollection<LessonSchedule> Lessons { get; set; } = new List<LessonSchedule>();
 
-        // Новое свойство для предпочтений
-        public TeacherPreferences Preferences { get; set; }
-    }
+    public TeacherPreferences Preferences { get; set; }
 }

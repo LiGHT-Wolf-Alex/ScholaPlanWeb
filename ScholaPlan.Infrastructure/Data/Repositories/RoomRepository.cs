@@ -1,67 +1,58 @@
-﻿using ScholaPlan.Application.Interfaces.IRepositories;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using ScholaPlan.Application.Interfaces.IRepositories;
 using ScholaPlan.Domain.Entities;
 using ScholaPlan.Infrastructure.Data.Context;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
-namespace ScholaPlan.Infrastructure.Repositories
+namespace ScholaPlan.Infrastructure.Data.Repositories;
+
+/// <summary>
+/// Реализация репозитория для работы с кабинетами.
+/// </summary>
+public class RoomRepository(ScholaPlanDbContext context, ILogger<RoomRepository> logger)
+    : IRoomRepository
 {
-    /// <summary>
-    /// Реализация репозитория для работы с кабинетами.
-    /// </summary>
-    public class RoomRepository : IRoomRepository
+    public async Task<Room?> GetByIdAsync(int roomId)
     {
-        private readonly ScholaPlanDbContext _context;
-        private readonly ILogger<RoomRepository> _logger;
-
-        public RoomRepository(ScholaPlanDbContext context, ILogger<RoomRepository> logger)
+        try
         {
-            _context = context;
-            _logger = logger;
+            logger.LogInformation($"Получение кабинета с ID {roomId}.");
+            return await context.Rooms
+                .Include(r => r.School)
+                .FirstOrDefaultAsync(r => r.Id == roomId);
         }
-
-        public async Task<Room?> GetByIdAsync(int roomId)
+        catch (Exception ex)
         {
-            try
-            {
-                _logger.LogInformation($"Получение кабинета с ID {roomId}.");
-                return await _context.Rooms
-                    .Include(r => r.School)
-                    .FirstOrDefaultAsync(r => r.Id == roomId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Ошибка при получении кабинета с ID {roomId}.");
-                throw;
-            }
+            logger.LogError(ex, $"Ошибка при получении кабинета с ID {roomId}.");
+            throw;
         }
+    }
 
-        public async Task AddAsync(Room room)
+    public async Task AddAsync(Room room)
+    {
+        try
         {
-            try
-            {
-                _logger.LogInformation($"Добавление нового кабинета: {room.Number}.");
-                await _context.Rooms.AddAsync(room);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка при добавлении кабинета.");
-                throw;
-            }
+            logger.LogInformation($"Добавление нового кабинета: {room.Number}.");
+            await context.Rooms.AddAsync(room);
         }
-
-        public void Remove(Room room)
+        catch (Exception ex)
         {
-            try
-            {
-                _logger.LogInformation($"Удаление кабинета с ID {room.Id}.");
-                _context.Rooms.Remove(room);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Ошибка при удалении кабинета с ID {room.Id}.");
-                throw;
-            }
+            logger.LogError(ex, "Ошибка при добавлении кабинета.");
+            throw;
+        }
+    }
+
+    public void Remove(Room room)
+    {
+        try
+        {
+            logger.LogInformation($"Удаление кабинета с ID {room.Id}.");
+            context.Rooms.Remove(room);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, $"Ошибка при удалении кабинета с ID {room.Id}.");
+            throw;
         }
     }
 }

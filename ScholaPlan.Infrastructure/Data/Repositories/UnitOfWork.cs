@@ -1,41 +1,28 @@
 ﻿using ScholaPlan.Application.Interfaces.IRepositories;
 using ScholaPlan.Infrastructure.Data.Context;
-using System.Threading.Tasks;
 
-namespace ScholaPlan.Infrastructure.Repositories
+namespace ScholaPlan.Infrastructure.Data.Repositories;
+
+/// <summary>
+/// Реализация паттерна Unit of Work для управления транзакциями.
+/// </summary>
+public class UnitOfWork(
+    ScholaPlanDbContext context,
+    ISchoolRepository schoolRepository,
+    IRoomRepository roomRepository,
+    ISubjectRepository subjectRepository,
+    ITeacherRepository teacherRepository,
+    ILessonScheduleRepository lessonScheduleRepository)
+    : IUnitOfWork
 {
-    /// <summary>
-    /// Реализация паттерна Unit of Work для управления транзакциями.
-    /// </summary>
-    public class UnitOfWork : IUnitOfWork
+    public ISchoolRepository Schools { get; } = schoolRepository;
+    public IRoomRepository Rooms { get; } = roomRepository;
+    public ISubjectRepository Subjects { get; } = subjectRepository;
+    public ITeacherRepository Teachers { get; } = teacherRepository;
+    public ILessonScheduleRepository LessonSchedules { get; } = lessonScheduleRepository;
+
+    public async Task<int> SaveChangesAsync()
     {
-        private readonly ScholaPlanDbContext _context;
-
-        public ISchoolRepository Schools { get; }
-        public IRoomRepository Rooms { get; }
-        public ISubjectRepository Subjects { get; }
-        public ITeacherRepository Teachers { get; }
-        public ILessonScheduleRepository LessonSchedules { get; }
-
-        public UnitOfWork(
-            ScholaPlanDbContext context,
-            ISchoolRepository schoolRepository,
-            IRoomRepository roomRepository,
-            ISubjectRepository subjectRepository,
-            ITeacherRepository teacherRepository,
-            ILessonScheduleRepository lessonScheduleRepository)
-        {
-            _context = context;
-            Schools = schoolRepository;
-            Rooms = roomRepository;
-            Subjects = subjectRepository;
-            Teachers = teacherRepository;
-            LessonSchedules = lessonScheduleRepository;
-        }
-
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
+        return await context.SaveChangesAsync();
     }
 }

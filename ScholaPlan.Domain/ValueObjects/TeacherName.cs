@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace ScholaPlan.Domain.ValueObjects;
 
