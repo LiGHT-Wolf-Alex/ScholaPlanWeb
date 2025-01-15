@@ -1,11 +1,8 @@
-﻿using ScholaPlan.Application.Interfaces;
+﻿using Microsoft.Extensions.Logging;
+using ScholaPlan.Application.Interfaces;
 using ScholaPlan.Domain.Entities;
 using ScholaPlan.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+
 
 namespace ScholaPlan.Application.Services
 {
@@ -97,7 +94,7 @@ namespace ScholaPlan.Application.Services
                 foreach (var classConfig in school.MaxLessonsPerDayConfigs)
                 {
                     int classGrade = classConfig.ClassGrade;
-                    int maxLessonsPerDay = classConfig.MaxLessons;
+                    int maxLessonsPerDay = classConfig.MaxLessonsPerDay;
 
                     var subjects = school.Subjects.OrderByDescending(s => s.WeeklyHours).ToList();
 

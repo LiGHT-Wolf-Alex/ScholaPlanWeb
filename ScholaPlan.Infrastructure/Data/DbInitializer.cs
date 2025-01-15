@@ -88,10 +88,10 @@ namespace ScholaPlan.Infrastructure.Data
             };
 
             // Добавление данных с явным указанием связей
-            var maxLessonsPerDayConfigs = new List<MaxLessonsPerDayConfig>
+            var maxLessonsPerDayConfigs = new List<SchoolGradeConfig>
             {
-                new MaxLessonsPerDayConfig { School = school, ClassGrade = 7, MaxLessons = 6 },
-                new MaxLessonsPerDayConfig { School = school, ClassGrade = 9, MaxLessons = 7 }
+                new SchoolGradeConfig { School = school, ClassGrade = 7, MaxLessonsPerDay = 6 },
+                new SchoolGradeConfig { School = school, ClassGrade = 9, MaxLessonsPerDay = 7 }
             };
 
             var subjects = new List<Subject>

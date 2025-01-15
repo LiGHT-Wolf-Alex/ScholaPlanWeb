@@ -20,7 +20,7 @@ namespace ScholaPlan.Infrastructure.Data.Context
         public DbSet<Teacher> Teachers { get; set; }
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<LessonSchedule> LessonSchedules { get; set; }
-        public DbSet<MaxLessonsPerDayConfig> MaxLessonsPerDayConfigs { get; set; }
+        public DbSet<SchoolGradeConfig> MaxLessonsPerDayConfigs { get; set; }
         public DbSet<TeacherPreferences> TeacherPreferences { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

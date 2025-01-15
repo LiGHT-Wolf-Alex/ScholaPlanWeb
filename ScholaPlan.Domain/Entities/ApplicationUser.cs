@@ -7,6 +7,5 @@ namespace ScholaPlan.Domain.Entities
     /// </summary>
     public class ApplicationUser : IdentityUser
     {
-        // Дополнительные свойства при необходимости
     }
 }

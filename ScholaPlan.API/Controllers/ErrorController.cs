@@ -2,28 +2,20 @@
 using Microsoft.AspNetCore.Mvc;
 using ScholaPlan.API.DTOs;
 
-namespace ScholaPlan.API.Controllers
+namespace ScholaPlan.API.Controllers;
+
+[ApiController]
+public class ErrorController(ILogger<ErrorController> logger) : ControllerBase
 {
-    [ApiController]
-    public class ErrorController : ControllerBase
+    [HttpGet]
+    [Route("error")]
+    public IActionResult HandleError()
     {
-        private readonly ILogger<ErrorController> _logger;
+        var context = HttpContext.Features.Get<IExceptionHandlerFeature>();
+        var exception = context?.Error;
 
-        public ErrorController(ILogger<ErrorController> logger)
-        {
-            _logger = logger;
-        }
+        logger.LogError(exception, "Необработанное исключение.");
 
-        [HttpGet]
-        [Route("error")]
-        public IActionResult HandleError()
-        {
-            var context = HttpContext.Features.Get<IExceptionHandlerFeature>();
-            var exception = context?.Error;
-
-            _logger.LogError(exception, "Необработанное исключение.");
-
-            return StatusCode(500, new ApiResponse<string>(false, "Внутренняя ошибка сервера."));
-        }
+        return StatusCode(500, new ApiResponse<string>(false, "Внутренняя ошибка сервера."));
     }
 }

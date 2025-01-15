@@ -7,6 +7,5 @@ namespace ScholaPlan.Domain.Entities
     /// </summary>
     public class ApplicationRole : IdentityRole
     {
-        // Дополнительные свойства при необходимости
     }
 }

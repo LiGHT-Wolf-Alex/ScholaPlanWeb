@@ -5,7 +5,7 @@ namespace ScholaPlan.Domain.Entities
     /// <summary>
     /// Конфигурация максимального количества уроков для школы
     /// </summary>
-    public class MaxLessonsPerDayConfig
+    public class SchoolGradeConfig
     {
         public int Id { get; set; }
 
@@ -27,6 +27,6 @@ namespace ScholaPlan.Domain.Entities
         /// Максимальное количество уроков в день
         /// </summary>
         [Range(1, 10, ErrorMessage = "Максимальное количество уроков должно быть от 1 до 10.")]
-        public int MaxLessons { get; set; }
+        public int MaxLessonsPerDay { get; set; }
     }
 }

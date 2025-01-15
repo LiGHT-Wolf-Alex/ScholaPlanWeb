@@ -49,12 +49,12 @@ namespace ScholaPlan.Application.Services
 
             var lessonsCountByClassDay = new ConcurrentDictionary<(int, DayOfWeek), int>();
 
-            var orderedClassConfigs = school.MaxLessonsPerDayConfigs.OrderByDescending(c => c.MaxLessons).ToList();
+            var orderedClassConfigs = school.MaxLessonsPerDayConfigs.OrderByDescending(c => c.MaxLessonsPerDay).ToList();
 
             foreach (var classConfig in orderedClassConfigs)
             {
                 int classGrade = classConfig.ClassGrade;
-                int maxLessonsPerDay = classConfig.MaxLessons;
+                int maxLessonsPerDay = classConfig.MaxLessonsPerDay;
 
                 var orderedSubjects = school.Subjects.OrderByDescending(s => s.WeeklyHours).ToList();
 

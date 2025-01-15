@@ -10,6 +10,9 @@ namespace ScholaPlan.Domain.Entities
         [Required]
         [StringLength(100, ErrorMessage = "Название предмета не может превышать 100 символов.")]
         public string Name { get; set; }
+        
+        public int MaxWeaklyLesson { get; set; }
+        
 
         [Range(1, 12, ErrorMessage = "Уровень сложности должен быть от 1 до 12.")]
         public int DifficultyLevel { get; set; }
